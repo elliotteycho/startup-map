@@ -243,8 +243,9 @@ def fetch_careers_page(page: Page, company: dict) -> tuple[str | None, str]:
     existing_url: str | None = company.get("careers_page_url")
     website: str = company.get("website", "")
 
-    # 1. Try existing careers URL if we have one.
-    if existing_url:
+    # 1. Try existing careers URL if we have one — but skip YC company pages,
+    #    which list full-time roles only and never mention internships.
+    if existing_url and "ycombinator.com" not in existing_url:
         try:
             resp = page.goto(existing_url, wait_until="domcontentloaded", timeout=25_000)
             if resp and resp.ok:
@@ -321,7 +322,8 @@ def enrich_company(page: Page, company: dict) -> dict | None:
     careers_url, text = fetch_careers_page(page, company)
 
     updates["intern_hiring_status"] = classify(text)
-    if careers_url and not company.get("careers_page_url"):
+    existing = company.get("careers_page_url") or ""
+    if careers_url and (not existing or "ycombinator.com" in existing):
         updates["careers_page_url"] = careers_url
 
     logger.info(
