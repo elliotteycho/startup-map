@@ -18,7 +18,6 @@ import time
 from datetime import datetime
 
 from dotenv import load_dotenv
-from playwright.sync_api import sync_playwright
 from supabase import Client, create_client
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -63,6 +62,7 @@ def get_supabase() -> Client:
 
 
 def fetch_html(url: str, scroll_iterations: int = 15) -> str:
+    from playwright.sync_api import sync_playwright
     logger.info("fetch_start url=%s scrolls=%d", url, scroll_iterations)
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -98,7 +98,43 @@ def upsert_companies(supabase: Client, companies: list, source_fund: str) -> int
     ).execute()
     affected = len(response.data) if response.data else 0
     logger.info("upsert source=%s affected=%d", source_fund, affected)
+
+    # Upsert founders for any company that has them
+    _upsert_founders(supabase, companies, response.data or [])
+
     return affected
+
+
+def _upsert_founders(supabase: Client, companies: list, upserted_rows: list) -> None:
+    """Upsert founders for companies that returned founder data from the extractor."""
+    # Build a name → id map from the upserted rows
+    name_to_id: dict[str, int] = {r["name"]: r["id"] for r in upserted_rows if "id" in r}
+
+    founder_rows = []
+    for company in companies:
+        if not company.founders:
+            continue
+        company_id = name_to_id.get(company.name)
+        if not company_id:
+            continue
+        for f in company.founders:
+            row: dict = {"company_id": company_id, "name": f.name}
+            if f.title:       row["title"]        = f.title
+            if f.linkedin_url: row["linkedin_url"] = f.linkedin_url
+            if f.bio:          row["bio"]          = f.bio
+            founder_rows.append(row)
+
+    if not founder_rows:
+        return
+
+    try:
+        supabase.table("founders").upsert(
+            founder_rows,
+            on_conflict="company_id,name",
+        ).execute()
+        logger.info("founders_upserted count=%d", len(founder_rows))
+    except Exception as e:
+        logger.warning("founders_upsert_failed error=%s", e)
 
 
 def run_source(supabase: Client, key: str, url: str, fund_name: str, yc_api_key: str | None = None) -> dict:

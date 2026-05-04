@@ -37,10 +37,25 @@ export interface Company {
   careers_page_url: string | null;
   intern_hiring_status: InternHiringStatus;
   one_line_pitch: string | null;
+  long_description: string | null;
   source_fund: string | null;
+  founded_year: number | null;
+  twitter_url: string | null;
+  linkedin_url: string | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   last_scraped_at: string | null;
+}
+
+export interface Founder {
+  id: number;
+  company_id: number;
+  name: string;
+  title: string | null;
+  linkedin_url: string | null;
+  bio: string | null;
+  created_at: string;
 }
 
 export interface CompanyWithAlumni extends Company {

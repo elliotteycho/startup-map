@@ -16,6 +16,15 @@ class InternHiringStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
+class Founder(BaseModel):
+    """One founder record, to be upserted into the founders table."""
+
+    name: str
+    title: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    bio: Optional[str] = None
+
+
 class Company(BaseModel):
     """Mirrors the companies table in Supabase."""
 
@@ -31,7 +40,12 @@ class Company(BaseModel):
     careers_page_url: Optional[str] = None
     intern_hiring_status: InternHiringStatus = InternHiringStatus.UNKNOWN
     one_line_pitch: Optional[str] = Field(None, max_length=300)
+    long_description: Optional[str] = None
     source_fund: Optional[str] = None
+    founded_year: Optional[int] = None
+
+    # Not persisted to companies table — handled separately by the pipeline
+    founders: list[Founder] = Field(default_factory=list, exclude=True)
 
     def to_supabase_row(self) -> dict:
         """Serialize for Supabase upsert. Drops None values to preserve existing data."""

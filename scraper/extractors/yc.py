@@ -15,7 +15,7 @@ from typing import Optional
 
 import httpx
 
-from models import Company, InternHiringStatus
+from models import Company, Founder, InternHiringStatus
 
 logger = logging.getLogger("extractors.yc")
 
@@ -23,7 +23,6 @@ _ALGOLIA_APP_ID = "45BWZJ1SGC"
 _ALGOLIA_INDEX = "YCCompany_production"
 _YC_PAGE = "https://www.ycombinator.com/companies"
 
-# Map our pipeline source keys to the batch strings Algolia uses.
 BATCH_NAMES: dict[str, str] = {
     "yc_w25": "Winter 2025",
     "yc_s24": "Summer 2024",
@@ -32,6 +31,12 @@ BATCH_NAMES: dict[str, str] = {
     "yc_w23": "Winter 2023",
     "yc_w22": "Winter 2022",
     "yc_s22": "Summer 2022",
+}
+
+# Approximate founding year from YC batch (companies usually founded 6-12 months before batch)
+_BATCH_YEAR: dict[str, int] = {
+    "Winter 2025": 2024, "Summer 2024": 2024, "Winter 2024": 2023,
+    "Summer 2023": 2023, "Winter 2023": 2022, "Winter 2022": 2021, "Summer 2022": 2022,
 }
 
 _SECTOR_MAP = {
@@ -61,7 +66,6 @@ _HEADCOUNT_RANGES = [
 
 
 def get_algolia_key() -> str:
-    """Fetch the public Algolia API key from the YC page via plain HTTP (no Playwright)."""
     resp = httpx.get(
         _YC_PAGE,
         headers={"User-Agent": "Mozilla/5.0"},
@@ -93,12 +97,28 @@ def _headcount(team_size: Optional[int]) -> Optional[str]:
     return "100+"
 
 
+def _parse_founders(raw: list[dict]) -> list[Founder]:
+    founders = []
+    for f in raw or []:
+        first = (f.get("first_name") or "").strip()
+        last = (f.get("last_name") or "").strip()
+        name = f"{first} {last}".strip()
+        if not name:
+            continue
+        linkedin = f.get("linkedin_url") or f.get("linkedinUrl") or None
+        if linkedin:
+            linkedin = linkedin.strip() or None
+        title = (f.get("title") or f.get("role") or "").strip() or None
+        bio = (f.get("founder_bio") or f.get("bio") or "").strip() or None
+        founders.append(Founder(name=name, title=title, linkedin_url=linkedin, bio=bio))
+    return founders
+
+
 def extract_yc_batch(
     batch_key: str,
     source_fund: str,
     api_key: Optional[str] = None,
 ) -> list[Company]:
-    """Return hiring companies for one YC batch, pulled from Algolia."""
     batch_name = BATCH_NAMES.get(batch_key)
     if not batch_name:
         raise ValueError(f"Unknown batch key '{batch_key}'. Add to BATCH_NAMES in extractors/yc.py.")
@@ -127,6 +147,8 @@ def extract_yc_batch(
     nb_hits: int = data["results"][0].get("nbHits", 0)
     logger.info("yc_algolia batch=%s total=%d fetched=%d", batch_name, nb_hits, len(hits))
 
+    founded_year = _BATCH_YEAR.get(batch_name)
+
     companies: list[Company] = []
     for hit in hits:
         website = (hit.get("website") or "").strip()
@@ -139,9 +161,8 @@ def extract_yc_batch(
         if not name:
             continue
 
-        one_liner = hit.get("one_liner") or hit.get("long_description")
-        if one_liner:
-            one_liner = one_liner.strip()[:300]
+        one_liner = (hit.get("one_liner") or "").strip()[:300] or None
+        long_desc = (hit.get("long_description") or hit.get("description") or "").strip() or None
 
         slug = hit.get("slug", "")
         careers_url = f"https://www.ycombinator.com/companies/{slug}#jobs" if slug else None
@@ -149,8 +170,19 @@ def extract_yc_batch(
         locations: list[str] = hit.get("all_locations") or []
         location = locations[0] if locations else None
 
+        # Founder year: prefer explicit field, fall back to batch approximation
+        raw_year = hit.get("founded_date") or hit.get("launched_at") or hit.get("year_founded")
+        company_year = founded_year
+        if raw_year:
+            try:
+                company_year = int(str(raw_year)[:4])
+            except (ValueError, TypeError):
+                pass
+
+        founders = _parse_founders(hit.get("founders") or hit.get("team") or [])
+
         try:
-            companies.append(Company(
+            c = Company(
                 name=name,
                 website=website,
                 sector=_sector(hit.get("industries") or []),
@@ -159,9 +191,13 @@ def extract_yc_batch(
                 location=location,
                 careers_page_url=careers_url,
                 intern_hiring_status=InternHiringStatus.HIRING,
-                one_line_pitch=one_liner,
+                one_line_pitch=one_liner or long_desc,
+                long_description=long_desc,
                 source_fund=source_fund,
-            ))
+                founded_year=company_year,
+            )
+            c.founders = founders
+            companies.append(c)
         except Exception as e:
             logger.warning("yc_algolia skip name=%s error=%s", name, e)
 
