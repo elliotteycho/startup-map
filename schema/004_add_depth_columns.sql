@@ -34,8 +34,11 @@ DROP POLICY IF EXISTS "public read founders" ON founders;
 CREATE POLICY "public read founders" ON founders FOR SELECT USING (true);
 
 -- ── Update companies_with_alumni view (use literal school_id, not subquery) ──
+-- DROP required because c.* expansion changed when new columns were added to
+-- companies; CREATE OR REPLACE can't handle column order changes.
 
-CREATE OR REPLACE VIEW companies_with_alumni AS
+DROP VIEW IF EXISTS companies_with_alumni;
+CREATE VIEW companies_with_alumni AS
 SELECT
   c.*,
   COALESCE(a.alumni_count, 0) AS vandy_alumni_count

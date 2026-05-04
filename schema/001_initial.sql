@@ -85,7 +85,8 @@ CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at DESC);
 -- ============================================================================
 -- Convenience view: company + alumni count for dashboard rendering
 -- ============================================================================
-CREATE OR REPLACE VIEW companies_with_alumni AS
+DROP VIEW IF EXISTS companies_with_alumni;
+CREATE VIEW companies_with_alumni AS
 SELECT
   c.*,
   COALESCE(a.alumni_count, 0) AS vandy_alumni_count
