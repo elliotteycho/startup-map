@@ -1,15 +1,13 @@
 /**
  * Per-company detail page.
  *
- * URL: /companies/[id] where id is the numeric company.id.
- *
- * Renders: hero (name, pitch, badges), key facts grid, hiring info, alumni
- * connections, links out to careers page and source VC fund.
+ * URL: /companies/[slug] where slug is the company's URL-safe name.
  */
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CompanyAvatar } from "@/components/CompanyAvatar";
 import { HiringBadge, SectorBadge, VandyBadge } from "@/components/badges";
 import { supabase } from "@/lib/supabase";
 import type { CompanyWithAlumni } from "@/lib/types";
@@ -17,14 +15,14 @@ import type { CompanyWithAlumni } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
-async function fetchCompany(id: number): Promise<CompanyWithAlumni | null> {
+async function fetchCompany(slug: string): Promise<CompanyWithAlumni | null> {
   const { data, error } = await supabase
     .from("companies_with_alumni")
     .select("*")
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
   if (error) return null;
   return (data ?? null) as CompanyWithAlumni | null;
@@ -60,21 +58,13 @@ function formatDate(d: string | null): string {
 }
 
 export default async function CompanyDetail({ params }: Props) {
-  const { id } = await params;
-  const numericId = Number(id);
-  if (Number.isNaN(numericId)) notFound();
+  const { slug } = await params;
+  if (!slug) notFound();
 
-  const company = await fetchCompany(numericId);
+  const company = await fetchCompany(slug);
   if (!company) notFound();
 
-  const alumni = await fetchAlumni(numericId);
-
-  const initials = company.name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const alumni = await fetchAlumni(company.id);
 
   const isPlaceholderUrl = company.website.includes("no-url.placeholder");
   const isVCInternalUrl =
@@ -106,9 +96,7 @@ export default async function CompanyDetail({ params }: Props) {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <section className="rounded-2xl border border-zinc-200 bg-white p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-zinc-900 text-2xl font-bold text-white">
-              {initials}
-            </div>
+            <CompanyAvatar name={company.name} website={company.website} size="lg" />
             <div className="min-w-0 flex-1">
               <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 {company.name}

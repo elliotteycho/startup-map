@@ -74,7 +74,8 @@ export function CompaniesView({ companies }: Props) {
         />
       </div>
 
-      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4">
+      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+        {/* Row 1: search + hiring dropdown + vandy toggle */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <svg
@@ -107,17 +108,6 @@ export function CompaniesView({ companies }: Props) {
             ))}
           </select>
 
-          <select
-            value={sectorFilter}
-            onChange={(e) => setSectorFilter(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-300"
-          >
-            <option value="all">All sectors</option>
-            {sectorsPresent.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-
           <label className="flex shrink-0 items-center gap-2 text-sm text-zinc-700">
             <input
               type="checkbox"
@@ -127,6 +117,33 @@ export function CompaniesView({ companies }: Props) {
             />
             Vandy connections only
           </label>
+        </div>
+
+        {/* Row 2: sector pills */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSectorFilter("all")}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              sectorFilter === "all"
+                ? "bg-zinc-900 text-white"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            }`}
+          >
+            All
+          </button>
+          {sectorsPresent.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSectorFilter(s)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                sectorFilter === s
+                  ? "bg-zinc-900 text-white"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
         </div>
       </div>
 
