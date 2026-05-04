@@ -24,6 +24,7 @@ from supabase import Client, create_client
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from extractors.llm import extract_companies
+from extractors.yc import BATCH_NAMES as YC_BATCH_NAMES, extract_yc_batch, get_algolia_key
 
 load_dotenv()
 
@@ -43,8 +44,16 @@ SOURCES: dict[str, tuple[str, str]] = {
     "greylock":   ("https://greylock.com/portfolio/", "Greylock"),
     "general":    ("https://www.generalcatalyst.com/portfolio/", "General Catalyst"),
     "lightspeed": ("https://lsvp.com/portfolio/", "Lightspeed Venture Partners"),
+    # YC: filter to recent batches + currently hiring. These are the
+    # intern-friendly companies (small teams, founders responsive).
+    "yc_w25":     ("https://www.ycombinator.com/companies?batch=Winter%202025&isHiring=true", "Y Combinator W25"),
+    "yc_s24":     ("https://www.ycombinator.com/companies?batch=Summer%202024&isHiring=true", "Y Combinator S24"),
+    "yc_w24":     ("https://www.ycombinator.com/companies?batch=Winter%202024&isHiring=true", "Y Combinator W24"),
     # a16z deferred: heavy SPA without standard anchor tags.
 }
+
+# Sources that need extra-aggressive scrolling (infinite scroll, lazy load heavy).
+HEAVY_SCROLL_SOURCES = {"yc_w25", "yc_s24", "yc_w24"}
 
 
 def get_supabase() -> Client:
@@ -53,8 +62,8 @@ def get_supabase() -> Client:
     return create_client(url, key)
 
 
-def fetch_html(url: str) -> str:
-    logger.info("fetch_start url=%s", url)
+def fetch_html(url: str, scroll_iterations: int = 15) -> str:
+    logger.info("fetch_start url=%s scrolls=%d", url, scroll_iterations)
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(user_agent=(
@@ -66,7 +75,7 @@ def fetch_html(url: str) -> str:
         page.goto(url, wait_until="domcontentloaded", timeout=60_000)
         # Give JS a moment to render dynamic content.
         time.sleep(3)
-        for _ in range(15):
+        for _ in range(scroll_iterations):
             page.mouse.wheel(0, 5000)
             time.sleep(0.4)
         page.evaluate("window.scrollTo(0, 0)")
@@ -92,7 +101,7 @@ def upsert_companies(supabase: Client, companies: list, source_fund: str) -> int
     return affected
 
 
-def run_source(supabase: Client, key: str, url: str, fund_name: str) -> dict:
+def run_source(supabase: Client, key: str, url: str, fund_name: str, yc_api_key: str | None = None) -> dict:
     """Scrape one source end-to-end. Returns a summary dict for the run report."""
     started = datetime.utcnow()
     summary = {
@@ -100,8 +109,12 @@ def run_source(supabase: Client, key: str, url: str, fund_name: str) -> dict:
         "extracted": 0, "upserted": 0, "error": None,
     }
     try:
-        html = fetch_html(url)
-        companies = extract_companies(html, source_fund=fund_name, source_url=url)
+        if key.startswith("yc_"):
+            companies = extract_yc_batch(key, source_fund=fund_name, api_key=yc_api_key)
+        else:
+            scrolls = 30 if key in HEAVY_SCROLL_SOURCES else 15
+            html = fetch_html(url, scroll_iterations=scrolls)
+            companies = extract_companies(html, source_fund=fund_name, source_url=url)
         summary["extracted"] = len(companies)
         summary["upserted"] = upsert_companies(supabase, companies, fund_name)
     except Exception as e:
@@ -124,10 +137,17 @@ def main() -> None:
         sys.exit(0)
 
     supabase = get_supabase()
+
+    yc_api_key: str | None = None
+    if any(k.startswith("yc_") for k in requested):
+        logger.info("fetching_yc_algolia_key")
+        yc_api_key = get_algolia_key()
+        logger.info("yc_algolia_key_acquired")
+
     summaries = []
     for key in requested:
         url, fund_name = SOURCES[key]
-        summaries.append(run_source(supabase, key, url, fund_name))
+        summaries.append(run_source(supabase, key, url, fund_name, yc_api_key=yc_api_key))
 
     print("\n" + "=" * 80)
     print("PIPELINE RUN SUMMARY")

@@ -213,9 +213,9 @@ def extract_companies(
         logger.warning("llm_extract source=%s no_candidate_links_found", source_fund)
         return []
 
-    if len(candidates) > 600:
-        logger.info("llm_extract source=%s truncating from=%d to=600", source_fund, len(candidates))
-        candidates = candidates[:600]
+    if len(candidates) > 1000:
+        logger.info("llm_extract source=%s truncating from=%d to=1000", source_fund, len(candidates))
+        candidates = candidates[:1000]
 
     prompt = EXTRACTION_PROMPT.format(
         source_fund=source_fund,
