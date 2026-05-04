@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Startup Dashboard | for Vanderbilt undergrads",
+  title: "Startup Map · Vanderbilt",
   description:
-    "Vetted early stage startups for Vanderbilt students. Filter by sector and intern hiring status. Built by a Vandy student.",
+    "Curated early-stage startups from top VC portfolios and YC, filtered for Vanderbilt student internships. Find your first startup.",
 };
 
 export default function RootLayout({
