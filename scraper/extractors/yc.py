@@ -66,6 +66,32 @@ _HEADCOUNT_RANGES = [
 ]
 
 
+def parse_founded_year(raw_year, batch_fallback: Optional[int] = None) -> Optional[int]:
+    """Convert a raw YC API year value to an int year.
+
+    Handles three formats:
+      - Unix timestamp (int > 1_000_000_000) — e.g. launched_at from Algolia
+      - Plain year int (1980-2030)
+      - ISO date string "YYYY-MM-DD" — takes first 4 chars
+    Falls back to batch_fallback if raw_year is None or unrecognized.
+    """
+    import datetime
+    if raw_year is None:
+        return batch_fallback
+    try:
+        v = int(raw_year)
+        if v > 1_000_000_000:
+            return datetime.datetime.fromtimestamp(v, tz=datetime.timezone.utc).year
+        if 1980 <= v <= 2030:
+            return v
+        return batch_fallback
+    except (ValueError, TypeError):
+        try:
+            return int(str(raw_year)[:4])
+        except (ValueError, TypeError):
+            return batch_fallback
+
+
 # get_algolia_key logic is duplicated in fetch_yc_founders.py (stdlib-only version).
 # KEEP IN SYNC if the YC page markup changes.
 def get_algolia_key() -> str:
@@ -175,14 +201,8 @@ def extract_yc_batch(
         locations: list[str] = hit.get("all_locations") or []
         location = locations[0] if locations else None
 
-        # Founder year: prefer explicit field, fall back to batch approximation
         raw_year = hit.get("founded_date") or hit.get("launched_at") or hit.get("year_founded")
-        company_year = founded_year
-        if raw_year:
-            try:
-                company_year = int(str(raw_year)[:4])
-            except (ValueError, TypeError):
-                pass
+        company_year = parse_founded_year(raw_year, batch_fallback=founded_year)
 
         founders = _parse_founders(hit.get("founders") or hit.get("team") or [])
 

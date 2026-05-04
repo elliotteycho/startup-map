@@ -16,6 +16,24 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+import datetime
+
+def _parse_founded_year(raw_year, batch_fallback=None):
+    if raw_year is None:
+        return batch_fallback
+    try:
+        v = int(raw_year)
+        if v > 1_000_000_000:
+            return datetime.datetime.fromtimestamp(v, tz=datetime.timezone.utc).year
+        if 1980 <= v <= 2030:
+            return v
+        return batch_fallback
+    except (ValueError, TypeError):
+        try:
+            return int(str(raw_year)[:4])
+        except (ValueError, TypeError):
+            return batch_fallback
+
 # ── Load .env manually (no dotenv needed) ────────────────────────
 def load_env(path: str = ".env"):
     env_path = Path(path)
@@ -218,15 +236,8 @@ def main():
             locations = hit.get("all_locations") or []
             location  = locations[0] if locations else None
 
-            company_year = founded_year
-            for field in ("founded_date", "launched_at", "year_founded"):
-                raw_year = hit.get(field)
-                if raw_year:
-                    try:
-                        company_year = int(str(raw_year)[:4])
-                        break
-                    except (ValueError, TypeError):
-                        pass
+            raw_year = hit.get("founded_date") or hit.get("launched_at") or hit.get("year_founded")
+            company_year = _parse_founded_year(raw_year, batch_fallback=founded_year)
 
             company_rows.append({
                 "name": name,
