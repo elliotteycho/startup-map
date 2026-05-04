@@ -34,6 +34,7 @@ BATCH_NAMES: dict[str, str] = {
 }
 
 # Approximate founding year from YC batch (companies usually founded 6-12 months before batch)
+# KEEP IN SYNC with BATCHES dict in fetch_yc_founders.py
 _BATCH_YEAR: dict[str, int] = {
     "Winter 2025": 2024, "Summer 2024": 2024, "Winter 2024": 2023,
     "Summer 2023": 2023, "Winter 2023": 2022, "Winter 2022": 2021, "Summer 2022": 2022,
@@ -65,6 +66,8 @@ _HEADCOUNT_RANGES = [
 ]
 
 
+# get_algolia_key logic is duplicated in fetch_yc_founders.py (stdlib-only version).
+# KEEP IN SYNC if the YC page markup changes.
 def get_algolia_key() -> str:
     resp = httpx.get(
         _YC_PAGE,

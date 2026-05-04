@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
   const { data, error } = await supabase
     .from("companies_with_alumni")
-    .select("*")
+    .select("id, slug, name, website, sector, one_line_pitch, intern_hiring_status, location, source_fund, vandy_alumni_count")
     .order("vandy_alumni_count", { ascending: false })
     .order("name", { ascending: true });
 

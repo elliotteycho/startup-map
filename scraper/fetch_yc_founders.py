@@ -35,6 +35,7 @@ SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 ALGOLIA_APP  = "45BWZJ1SGC"
 ALGOLIA_IDX  = "YCCompany_production"
 
+# KEEP IN SYNC with _BATCH_YEAR in extractors/yc.py
 BATCHES = {
     "Winter 2025": 2024,
     "Summer 2024": 2024,

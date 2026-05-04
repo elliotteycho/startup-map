@@ -68,7 +68,7 @@ def fetch_html(url: str) -> str:
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         ))
-        page.goto(url, wait_until="networkidle", timeout=60_000)
+        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
 
         for _ in range(15):
             page.mouse.wheel(0, 5000)

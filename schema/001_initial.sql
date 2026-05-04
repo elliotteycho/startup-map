@@ -93,7 +93,7 @@ FROM companies c
 LEFT JOIN (
   SELECT current_company_id, COUNT(*) AS alumni_count
   FROM alumni
-  WHERE school_id = (SELECT id FROM schools WHERE slug = 'vanderbilt')
+  WHERE school_id = 1  -- Vanderbilt; avoids subquery on every row evaluation
   GROUP BY current_company_id
 ) a ON a.current_company_id = c.id;
 

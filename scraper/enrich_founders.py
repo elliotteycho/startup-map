@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -112,7 +113,6 @@ Return ONLY the JSON array, no other text."""
         # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-        import json
         founders = json.loads(raw)
         return [f for f in founders if isinstance(f, dict) and f.get("name")]
     except Exception as e:
@@ -125,11 +125,13 @@ def upsert_founders(sb, company_id: int, founders: list[dict]) -> int:
         return 0
     rows = []
     for f in founders:
-        row = {"company_id": company_id, "name": str(f["name"])[:200]}
-        if f.get("title"):      row["title"]        = str(f["title"])[:200]
-        if f.get("linkedin_url"): row["linkedin_url"] = str(f["linkedin_url"])[:500]
-        if f.get("bio"):        row["bio"]          = str(f["bio"])[:2000]
-        rows.append(row)
+        rows.append({
+            "company_id":  company_id,
+            "name":        str(f["name"])[:200],
+            "title":       str(f["title"])[:200] if f.get("title") else None,
+            "linkedin_url": str(f["linkedin_url"])[:500] if f.get("linkedin_url") else None,
+            "bio":         str(f["bio"])[:2000] if f.get("bio") else None,
+        })
     try:
         sb.table("founders").upsert(rows, on_conflict="company_id,name").execute()
         return len(rows)
@@ -152,11 +154,10 @@ def main():
     query = sb.table("companies").select("id,name,website,source_fund")
     if args.source:
         query = query.eq("source_fund", args.source)
-    query = query.order("id").limit(2000)
+    query = query.order("id")
     companies = query.execute().data or []
 
     if not args.recheck:
-        # Exclude companies that already have founders
         existing_ids = {
             r["company_id"]
             for r in (sb.table("founders").select("company_id").execute().data or [])
