@@ -29,7 +29,6 @@ export function DashboardShell({ companies }: Props) {
   const [sectorFilter, setSectorFilter] = useState("all");
   const [vandyOnly,    setVandyOnly]    = useState(false);
 
-  // ── Derived stats ───────────────────────────────────────────────
   const hiringCount  = useMemo(() => companies.filter(c => c.intern_hiring_status === "hiring").length, [companies]);
   const sectorsCount = useMemo(() => new Set(companies.map(c => c.sector).filter(Boolean)).size, [companies]);
   const vandyCount   = useMemo(() => companies.filter(c => c.vandy_alumni_count > 0).length, [companies]);
@@ -65,56 +64,42 @@ export function DashboardShell({ companies }: Props) {
     setSearch(""); setHiringFilter("all"); setSectorFilter("all"); setVandyOnly(false);
   }
 
-  // ── Stat cell active state ──────────────────────────────────────
   const allActive    = hiringFilter === "all" && sectorFilter === "all" && !vandyOnly && !search;
   const hiringActive = hiringFilter === "hiring";
   const vandyActive  = vandyOnly && hiringFilter === "all";
 
   return (
-    <div className="relative mx-auto max-w-7xl px-6 pb-8">
+    <div className="relative mx-auto max-w-7xl px-6 pb-12">
 
       {/* ── Stats grid ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.06] overflow-hidden rounded-t-2xl border border-b-0 border-white/[0.08] bg-white/[0.02] sm:grid-cols-4 sm:divide-y-0">
-        <StatCell
-          label="Companies"
-          value={companies.length}
-          active={allActive}
-          onClick={clearAll}
-        />
-        <StatCell
-          label="Hiring interns"
-          value={hiringCount}
-          highlight
-          active={hiringActive}
-          onClick={() => { clearAll(); setHiringFilter("hiring"); }}
-        />
-        <StatCell
-          label="Sectors"
-          value={sectorsCount}
-          active={false}
-          onClick={clearAll}
-        />
-        <StatCell
-          label="Vandy connections"
-          value={vandyCount}
-          gold
-          active={vandyActive}
-          onClick={() => { clearAll(); setVandyOnly(true); }}
-        />
+      <div
+        className="grid grid-cols-2 divide-x divide-y divide-white/[0.06] overflow-hidden rounded-t-2xl border border-b-0 border-white/[0.08] bg-white/[0.02] sm:grid-cols-4 sm:divide-y-0"
+        role="region"
+        aria-label="Summary statistics"
+      >
+        <StatCell label="Companies" value={companies.length} active={allActive} onClick={clearAll} />
+        <StatCell label="Hiring interns" value={hiringCount} highlight active={hiringActive} onClick={() => { clearAll(); setHiringFilter("hiring"); }} />
+        <StatCell label="Sectors" value={sectorsCount} active={false} onClick={clearAll} />
+        <StatCell label="Vandy connections" value={vandyCount} gold active={vandyActive} onClick={() => { clearAll(); setVandyOnly(true); }} />
       </div>
 
       {/* ── Filter panel ───────────────────────────────────────── */}
-      <div className="rounded-b-2xl rounded-t-none border border-white/[0.08] bg-slate-900/60 backdrop-blur-xl px-5 py-4 mb-6">
+      <div
+        className="rounded-b-2xl rounded-t-none border border-white/[0.08] bg-slate-900/70 backdrop-blur-xl px-5 py-4 mb-8"
+        role="search"
+        aria-label="Filter companies"
+      >
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true">
               <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.45 4.39l3.08 3.08a.75.75 0 11-1.06 1.06l-3.08-3.08A7 7 0 012 9z" clipRule="evenodd" />
             </svg>
             <input
-              type="text"
+              type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by name, pitch, or VC firm..."
+              aria-label="Search companies"
               className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-9 pr-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-violet-500/60 focus:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-colors"
             />
           </div>
@@ -133,21 +118,24 @@ export function DashboardShell({ companies }: Props) {
           {activeFilterCount > 0 && (
             <button
               onClick={clearAll}
-              className="shrink-0 rounded-lg border border-slate-700/60 px-3 py-2 text-xs text-slate-400 hover:border-slate-600 hover:text-slate-200 transition-colors"
+              aria-label={`Clear ${activeFilterCount} active filter${activeFilterCount > 1 ? "s" : ""}`}
+              className="shrink-0 rounded-lg border border-slate-700/60 px-3 py-2 text-xs text-slate-400 hover:border-violet-500/40 hover:text-slate-200 hover:bg-violet-500/10 transition-all"
             >
               Clear {activeFilterCount}
             </button>
           )}
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        {/* Status pills */}
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter by hiring status">
           {STATUS_PILLS.map(p => (
             <button
               key={p.value}
               onClick={() => setHiringFilter(p.value as HiringFilter)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              aria-pressed={hiringFilter === p.value}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 ${
                 hiringFilter === p.value
-                  ? "bg-violet-600 text-white"
+                  ? "bg-violet-600 text-white pill-active"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
               }`}
             >
@@ -156,12 +144,14 @@ export function DashboardShell({ companies }: Props) {
           ))}
         </div>
 
-        <div className="mt-2 flex flex-wrap gap-2">
+        {/* Sector pills */}
+        <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Filter by sector">
           <button
             onClick={() => setSectorFilter("all")}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            aria-pressed={sectorFilter === "all"}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 ${
               sectorFilter === "all"
-                ? "bg-violet-600 text-white"
+                ? "bg-violet-600 text-white pill-active"
                 : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
             }`}
           >
@@ -171,9 +161,10 @@ export function DashboardShell({ companies }: Props) {
             <button
               key={s}
               onClick={() => setSectorFilter(s)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              aria-pressed={sectorFilter === s}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 ${
                 sectorFilter === s
-                  ? "bg-violet-600 text-white"
+                  ? "bg-violet-600 text-white pill-active"
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
               }`}
             >
@@ -184,18 +175,21 @@ export function DashboardShell({ companies }: Props) {
       </div>
 
       {/* Result count */}
-      <div className="mb-4">
+      <div className="mb-5" aria-live="polite" aria-atomic="true">
         <p className="text-sm text-slate-500">
-          <span className="font-medium text-slate-200">{filtered.length}</span>
+          <span className="font-semibold text-slate-200">{filtered.length}</span>
           {" "}of {companies.length} companies
+          {activeFilterCount > 0 && (
+            <span className="ml-2 text-slate-600">· filtered</span>
+          )}
         </p>
       </div>
 
-      {/* Grid */}
+      {/* Card grid — staggered entrance (Linear-style) */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-slate-700/40 bg-slate-900/60 p-16 text-center">
+        <div className="rounded-2xl border border-slate-700/40 bg-slate-900/60 p-16 text-center" role="status">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-slate-500">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-slate-500" aria-hidden="true">
               <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.45 4.39l3.08 3.08a.75.75 0 11-1.06 1.06l-3.08-3.08A7 7 0 012 9z" clipRule="evenodd" />
             </svg>
           </div>
@@ -204,7 +198,15 @@ export function DashboardShell({ companies }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map(c => <CompanyCard key={c.id} company={c} />)}
+          {filtered.map((c, i) => (
+            <div
+              key={c.id}
+              className="card-animate"
+              style={{ animationDelay: `${Math.min(i * 28, 280)}ms` }}
+            >
+              <CompanyCard company={c} />
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -226,6 +228,7 @@ function StatCell({
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       className={`group w-full cursor-pointer px-6 py-5 text-left transition-colors duration-150 ${
         highlight
           ? active ? "bg-emerald-500/20" : "bg-emerald-500/10 hover:bg-emerald-500/15"

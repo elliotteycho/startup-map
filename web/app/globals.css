@@ -17,3 +17,37 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans, system-ui, sans-serif);
 }
+
+/* GOV.UK-style accessible focus ring */
+:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Card entrance animation — Linear-style stagger */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animate {
+  animation: fade-in-up 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Pill active transition */
+@keyframes pill-select {
+  0%   { transform: scale(0.96); }
+  60%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+.pill-active {
+  animation: pill-select 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
