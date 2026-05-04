@@ -9,7 +9,10 @@
 import { supabase } from "@/lib/supabase";
 import type { CompanyWithAlumni } from "@/lib/types";
 
-export const revalidate = 300; // Cache for 5 minutes; scraper runs weekly anyway.
+// During development and demos, fetch fresh data on every request so newly
+// scraped companies appear immediately. Switch back to revalidate=300 (or
+// higher) once the scraper runs on a real schedule and you want CDN caching.
+export const dynamic = "force-dynamic";
 
 async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
   const { data, error } = await supabase
