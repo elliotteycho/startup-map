@@ -1,23 +1,19 @@
 /**
- * Home page: the dashboard. Server-rendered list of all companies, fetched
- * directly from Supabase at request time.
- *
- * This is intentionally minimal in v1. Filters and per-company detail pages
- * come in Tasks #12 and #13.
+ * Home page: server-renders the company list, hands off to CompaniesView for
+ * client-side filtering and rendering.
  */
 
+import { CompaniesView } from "@/components/CompaniesView";
 import { supabase } from "@/lib/supabase";
 import type { CompanyWithAlumni } from "@/lib/types";
 
-// During development and demos, fetch fresh data on every request so newly
-// scraped companies appear immediately. Switch back to revalidate=300 (or
-// higher) once the scraper runs on a real schedule and you want CDN caching.
 export const dynamic = "force-dynamic";
 
 async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
   const { data, error } = await supabase
     .from("companies_with_alumni")
     .select("*")
+    .order("vandy_alumni_count", { ascending: false })
     .order("name", { ascending: true });
 
   if (error) {
@@ -28,147 +24,36 @@ async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
   return (data ?? []) as CompanyWithAlumni[];
 }
 
-function formatRoundSize(usd: number | null): string {
-  if (!usd) return "—";
-  if (usd >= 1_000_000_000) return `$${(usd / 1_000_000_000).toFixed(1)}B`;
-  if (usd >= 1_000_000) return `$${(usd / 1_000_000).toFixed(0)}M`;
-  return `$${(usd / 1_000).toFixed(0)}K`;
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    hiring: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    open_to: "bg-amber-100 text-amber-800 border-amber-200",
-    not_hiring: "bg-zinc-100 text-zinc-600 border-zinc-200",
-    unknown: "bg-zinc-50 text-zinc-500 border-zinc-200",
-  };
-  const label: Record<string, string> = {
-    hiring: "Hiring interns",
-    open_to: "Open to interns",
-    not_hiring: "Not hiring",
-    unknown: "Status unknown",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${styles[status] ?? styles.unknown}`}
-    >
-      {label[status] ?? "Unknown"}
-    </span>
-  );
-}
-
 export default async function Home() {
   const companies = await fetchCompanies();
 
   return (
     <div className="min-h-screen bg-zinc-50">
       <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Startup Dashboard
+        <div className="mx-auto max-w-7xl px-6 py-10">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-200">
+              Beta · for Vanderbilt students
+            </span>
+          </div>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+            The startup map for Vandy.
           </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            Vetted early stage startups for Vanderbilt undergrads. Filter by sector and intern hiring status.
+          <p className="mt-3 max-w-2xl text-base text-zinc-600 sm:text-lg">
+            Curated early stage startups vetted for student internships. Filter by sector, hiring status, and Vandy alumni connections. Updated weekly from major VC portfolios.
           </p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-zinc-600">
-            {companies.length} {companies.length === 1 ? "company" : "companies"}
-          </p>
-        </div>
-
-        {companies.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center">
-            <p className="text-zinc-700">No companies in the database yet.</p>
-            <p className="mt-2 text-sm text-zinc-500">
-              Run the scraper or insert seed data to populate the dashboard.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-zinc-200">
-              <thead className="bg-zinc-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Company
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Sector
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Stage
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Last Round
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Location
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Hiring
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                    Vandy
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 bg-white">
-                {companies.map((c) => (
-                  <tr key={c.id} className="hover:bg-zinc-50">
-                    <td className="px-4 py-4">
-                      <div>
-                        <a
-                          href={c.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-zinc-900 hover:text-blue-600"
-                        >
-                          {c.name}
-                        </a>
-                        {c.one_line_pitch && (
-                          <p className="mt-0.5 max-w-md text-sm text-zinc-500">
-                            {c.one_line_pitch}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-zinc-700">
-                      {c.sector ?? "—"}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-zinc-700">
-                      {c.stage ?? "—"}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-zinc-700">
-                      {formatRoundSize(c.last_round_size_usd)}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-zinc-700">
-                      {c.location ?? "—"}
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusBadge status={c.intern_hiring_status} />
-                    </td>
-                    <td className="px-4 py-4 text-sm text-zinc-700">
-                      {c.vandy_alumni_count > 0 ? (
-                        <span className="inline-flex items-center rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-yellow-800 ring-1 ring-yellow-200">
-                          {c.vandy_alumni_count} alum{c.vandy_alumni_count === 1 ? "" : "ni"}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <CompaniesView companies={companies} />
       </main>
 
-      <footer className="mx-auto max-w-6xl px-6 py-8 text-center text-xs text-zinc-500">
-        v1 in development · built by a Vandy student, for Vandy students
+      <footer className="mx-auto max-w-7xl border-t border-zinc-200 px-6 py-8">
+        <div className="flex flex-col items-center justify-between gap-3 text-xs text-zinc-500 sm:flex-row">
+          <span>v1 in development · built by a Vandy student, for Vandy students</span>
+          <span>Last refreshed: every page load</span>
+        </div>
       </footer>
     </div>
   );
