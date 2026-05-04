@@ -1,6 +1,10 @@
 /**
  * TypeScript types mirroring the Supabase schema. Hand-written for v1.
- * If the schema grows beyond ~10 tables, generate these via `supabase gen types typescript`.
+ * Used for query result type assertions; not wired into the Supabase client
+ * itself (the client is untyped in v1 for simplicity).
+ *
+ * When the schema stabilizes, regenerate via:
+ *   npx supabase gen types typescript --project-id <id> > lib/database.ts
  */
 
 export type InternHiringStatus =
@@ -8,6 +12,15 @@ export type InternHiringStatus =
   | "open_to"
   | "not_hiring"
   | "unknown";
+
+export interface School {
+  id: number;
+  slug: string;
+  name: string;
+  domain: string | null;
+  active: boolean;
+  created_at: string;
+}
 
 export interface Company {
   id: number;
@@ -34,19 +47,25 @@ export interface CompanyWithAlumni extends Company {
   vandy_alumni_count: number;
 }
 
-export interface Database {
-  public: {
-    Tables: {
-      companies: {
-        Row: Company;
-        Insert: Omit<Company, "id" | "created_at" | "updated_at">;
-        Update: Partial<Omit<Company, "id" | "created_at">>;
-      };
-    };
-    Views: {
-      companies_with_alumni: {
-        Row: CompanyWithAlumni;
-      };
-    };
-  };
+export interface Alumni {
+  id: number;
+  school_id: number;
+  name: string;
+  linkedin_url: string | null;
+  current_company_id: number | null;
+  role: string | null;
+  graduation_year: number | null;
+  is_recruiter: boolean;
+  created_at: string;
+  last_verified_at: string | null;
+}
+
+export interface AppEvent {
+  id: number;
+  session_id: string;
+  school_slug: string;
+  event_type: string;
+  company_id: number | null;
+  payload: Record<string, unknown> | null;
+  created_at: string;
 }

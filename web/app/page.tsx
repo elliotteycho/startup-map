@@ -6,8 +6,6 @@
  * come in Tasks #12 and #13.
  */
 
-import Link from "next/link";
-
 import { supabase } from "@/lib/supabase";
 import type { CompanyWithAlumni } from "@/lib/types";
 
@@ -24,7 +22,7 @@ async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
     console.error("fetchCompanies failed", error);
     return [];
   }
-  return data ?? [];
+  return (data ?? []) as CompanyWithAlumni[];
 }
 
 function formatRoundSize(usd: number | null): string {
@@ -119,14 +117,14 @@ export default async function Home() {
                   <tr key={c.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-4">
                       <div>
-                        <Link
+                        <a
                           href={c.website}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-zinc-900 hover:text-blue-600"
                         >
                           {c.name}
-                        </Link>
+                        </a>
                         {c.one_line_pitch && (
                           <p className="mt-0.5 max-w-md text-sm text-zinc-500">
                             {c.one_line_pitch}
