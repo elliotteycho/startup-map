@@ -66,6 +66,21 @@ _HEADCOUNT_RANGES = [
 ]
 
 
+def parse_location(raw: object) -> Optional[str]:
+    """Return the first location string from all_locations.
+
+    Algolia returns all_locations as either a list of strings or a bare string.
+    Treating a string as a list produces locations[0] == first character, e.g.
+    'San Francisco, CA'[0] == 'S'. Guard against that here.
+    """
+    if not raw:
+        return None
+    if isinstance(raw, str):
+        return raw or None
+    locs = list(raw)
+    return locs[0] if locs else None
+
+
 def parse_founded_year(raw_year, batch_fallback: Optional[int] = None) -> Optional[int]:
     """Convert a raw YC API year value to an int year.
 
@@ -198,8 +213,7 @@ def extract_yc_batch(
         slug = hit.get("slug", "")
         careers_url = f"https://www.ycombinator.com/companies/{slug}#jobs" if slug else None
 
-        locations: list[str] = hit.get("all_locations") or []
-        location = locations[0] if locations else None
+        location = parse_location(hit.get("all_locations"))
 
         raw_year = hit.get("founded_date") or hit.get("launched_at") or hit.get("year_founded")
         company_year = parse_founded_year(raw_year, batch_fallback=founded_year)

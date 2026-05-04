@@ -22,6 +22,8 @@ Covers every bug that was found and fixed in the scraper:
   18. _sector: unknown industry returns "Other"
   19. _sector: empty list returns None
   20. _sector: case-insensitive matching
+  21. location: all_locations as list → first element
+  22. location: all_locations as string → whole string (not first char)
 """
 
 import sys
@@ -30,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from extractors.yc import _headcount, _parse_founders, _sector, parse_founded_year
+from extractors.yc import _headcount, _parse_founders, _sector, parse_founded_year, parse_location
 
 
 class TestParseFountedYear(unittest.TestCase):
@@ -165,6 +167,28 @@ class TestSector(unittest.TestCase):
 
     def test_b2b_maps_to_enterprise(self):
         self.assertEqual(_sector(["B2B SaaS"]), "Enterprise")
+
+
+class TestParseLocation(unittest.TestCase):
+
+    def test_list_returns_first_element(self):
+        self.assertEqual(parse_location(["San Francisco, CA", "New York, NY"]), "San Francisco, CA")
+
+    def test_string_returns_whole_string_not_first_char(self):
+        # Bug: 'San Francisco, CA'[0] == 'S' — must return full string
+        self.assertEqual(parse_location("San Francisco, CA"), "San Francisco, CA")
+
+    def test_single_item_list(self):
+        self.assertEqual(parse_location(["Remote"]), "Remote")
+
+    def test_none_returns_none(self):
+        self.assertIsNone(parse_location(None))
+
+    def test_empty_list_returns_none(self):
+        self.assertIsNone(parse_location([]))
+
+    def test_empty_string_returns_none(self):
+        self.assertIsNone(parse_location(""))
 
 
 if __name__ == "__main__":

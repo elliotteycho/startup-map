@@ -233,7 +233,8 @@ def main():
             one_liner = (hit.get("one_liner") or "").strip()[:300] or None
             long_desc = (hit.get("long_description") or hit.get("description") or "").strip() or None
             careers   = f"https://www.ycombinator.com/companies/{yc_slug}#jobs" if yc_slug else None
-            locations = hit.get("all_locations") or []
+            raw_locs  = hit.get("all_locations") or []
+            locations = [raw_locs] if isinstance(raw_locs, str) else list(raw_locs)
             location  = locations[0] if locations else None
 
             raw_year = hit.get("founded_date") or hit.get("launched_at") or hit.get("year_founded")
