@@ -92,7 +92,7 @@ def _headcount(team_size: Optional[int]) -> Optional[str]:
     if not team_size:
         return None
     for threshold, label in _HEADCOUNT_RANGES:
-        if team_size < threshold:
+        if team_size <= threshold:
             return label
     return "100+"
 
@@ -100,9 +100,11 @@ def _headcount(team_size: Optional[int]) -> Optional[str]:
 def _parse_founders(raw: list[dict]) -> list[Founder]:
     founders = []
     for f in raw or []:
-        first = (f.get("first_name") or "").strip()
-        last = (f.get("last_name") or "").strip()
-        name = f"{first} {last}".strip()
+        name = (f.get("full_name") or "").strip()
+        if not name:
+            first = (f.get("first_name") or "").strip()
+            last = (f.get("last_name") or "").strip()
+            name = f"{first} {last}".strip()
         if not name:
             continue
         linkedin = f.get("linkedin_url") or f.get("linkedinUrl") or None

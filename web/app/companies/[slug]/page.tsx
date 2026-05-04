@@ -13,20 +13,18 @@ interface Props {
 }
 
 async function fetchCompany(slug: string): Promise<CompanyWithAlumni | null> {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("companies_with_alumni")
     .select("*")
     .eq("slug", slug)
-    .order("id")
-    .limit(1);
-  if (error || !data?.length) return null;
-  return data[0] as CompanyWithAlumni;
+    .maybeSingle();
+  return (data as CompanyWithAlumni) ?? null;
 }
 
 async function fetchAlumni(companyId: number) {
   const { data } = await supabase
     .from("alumni")
-    .select("name, role, linkedin_url, graduation_year, is_recruiter")
+    .select("id, name, role, linkedin_url, graduation_year, is_recruiter")
     .eq("current_company_id", companyId)
     .order("graduation_year", { ascending: false });
   return data ?? [];
@@ -35,7 +33,7 @@ async function fetchAlumni(companyId: number) {
 async function fetchFounders(companyId: number): Promise<Founder[]> {
   const { data } = await supabase
     .from("founders")
-    .select("*")
+    .select("id, name, title, linkedin_url, bio")
     .eq("company_id", companyId)
     .order("id");
   return (data ?? []) as Founder[];
@@ -73,6 +71,9 @@ export default async function CompanyDetail({ params }: Props) {
   const isVCInternalUrl =
     !isPlaceholderUrl &&
     /(foundersfund|sequoiacap|khoslaventures|greylock|generalcatalyst|lsvp)\.com/i.test(company.website);
+
+  let websiteHostname = "";
+  try { websiteHostname = new URL(company.website).hostname.replace("www.", ""); } catch {}
 
   const hasStats = company.stage || company.last_round_size_usd || company.headcount_range || company.founded_year;
   const tags = (company.tags ?? []).slice(0, 6);
@@ -158,7 +159,7 @@ export default async function CompanyDetail({ params }: Props) {
                   {!isPlaceholderUrl && !isVCInternalUrl && (
                     <SocialLink href={company.website} label="Website">
                       <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16A8 8 0 0010 2zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clipRule="evenodd" /></svg>
-                      {new URL(company.website).hostname.replace("www.", "")}
+                      {websiteHostname}
                     </SocialLink>
                   )}
                   {company.twitter_url && (
@@ -282,7 +283,7 @@ export default async function CompanyDetail({ params }: Props) {
                 <ApplyLink
                   label="Company website"
                   href={company.website}
-                  description={new URL(company.website).hostname.replace("www.", "")}
+                  description={websiteHostname}
                 />
               )}
             </div>
@@ -306,8 +307,8 @@ export default async function CompanyDetail({ params }: Props) {
               </div>
             ) : (
               <ul className="mt-4 space-y-3">
-                {alumni.map((a, i) => (
-                  <li key={i} className="flex items-start justify-between gap-3">
+                {alumni.map((a) => (
+                  <li key={a.id} className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-medium text-slate-200">{a.name}</div>
                       <div className="text-xs text-slate-400">

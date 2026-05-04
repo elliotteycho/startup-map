@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from enum import Enum
 from typing import Optional
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -49,10 +51,7 @@ class Company(BaseModel):
 
     def to_supabase_row(self) -> dict:
         """Serialize for Supabase upsert. Drops None values to preserve existing data."""
-        from re import sub
-        from urllib.parse import urlparse
-
-        slug = sub(r"[^a-z0-9]+", "-", self.name.lower()).strip("-")
+        slug = re.sub(r"[^a-z0-9]+", "-", self.name.lower()).strip("-")
         row = self.model_dump(mode="json", exclude_none=True)
         row["slug"] = slug
         row["last_scraped_at"] = datetime.utcnow().isoformat()

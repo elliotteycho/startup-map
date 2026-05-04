@@ -3,15 +3,16 @@ Find Vanderbilt-affiliated people at startups in the DB.
 
 Two strategies:
   1. founder-scan  — scrapes LinkedIn profiles of founders we already have
-                     and checks for Vanderbilt education (no API key needed)
+                     and checks for Vanderbilt education (no API key needed).
+                     NOTE: LinkedIn blocks automated requests with HTTP 999.
+                     This strategy produces 0 results in practice. Use apollo instead.
   2. apollo        — uses Apollo.io people-search API with school filter
                      (free API key at apollo.io — 50 exports/month free)
 
 Usage:
-    python3 find_vandy_alumni.py founder-scan          # check all founder profiles
-    python3 find_vandy_alumni.py founder-scan --limit 100
     python3 find_vandy_alumni.py apollo                # needs APOLLO_API_KEY in .env
     python3 find_vandy_alumni.py apollo --school "Vanderbilt University"
+    python3 find_vandy_alumni.py founder-scan --limit 100  # blocked by LinkedIn
 """
 
 from __future__ import annotations

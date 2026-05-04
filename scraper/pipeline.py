@@ -118,11 +118,13 @@ def _upsert_founders(supabase: Client, companies: list, upserted_rows: list) -> 
         if not company_id:
             continue
         for f in company.founders:
-            row: dict = {"company_id": company_id, "name": f.name}
-            if f.title:       row["title"]        = f.title
-            if f.linkedin_url: row["linkedin_url"] = f.linkedin_url
-            if f.bio:          row["bio"]          = f.bio
-            founder_rows.append(row)
+            founder_rows.append({
+                "company_id":  company_id,
+                "name":        f.name,
+                "title":       f.title,
+                "linkedin_url": f.linkedin_url,
+                "bio":         f.bio,
+            })
 
     if not founder_rows:
         return
