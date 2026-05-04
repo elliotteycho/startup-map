@@ -36,11 +36,22 @@ class Company(BaseModel):
     def to_supabase_row(self) -> dict:
         """Serialize for Supabase upsert. Drops None values to preserve existing data."""
         from re import sub
+        from urllib.parse import urlparse
 
         slug = sub(r"[^a-z0-9]+", "-", self.name.lower()).strip("-")
         row = self.model_dump(mode="json", exclude_none=True)
         row["slug"] = slug
         row["last_scraped_at"] = datetime.utcnow().isoformat()
+
+        # Normalize website to root domain so the same company scraped from
+        # multiple VC portfolios always upserts to the same row.
+        try:
+            parsed = urlparse(str(self.website))
+            netloc = parsed.netloc.lower().lstrip("www.")
+            row["website"] = f"https://{netloc}"
+        except Exception:
+            pass
+
         return row
 
 

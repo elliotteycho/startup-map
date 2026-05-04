@@ -29,19 +29,19 @@ export function CompanyAvatar({ name, website, size = "sm" }: Props) {
 
   const isLg = size === "lg";
   const containerCls = isLg
-    ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl overflow-hidden"
-    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg overflow-hidden";
+    ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl overflow-hidden bg-slate-800 border border-slate-700/50"
+    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-slate-800 border border-slate-700/50";
   const imgCls = isLg ? "h-10 w-10 object-contain" : "h-6 w-6 object-contain";
   const fallbackCls = isLg
-    ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-zinc-900 text-2xl font-bold text-white"
-    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-sm font-semibold text-white";
+    ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-800 text-2xl font-bold text-slate-300 border border-slate-700/50"
+    : "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-sm font-semibold text-slate-300 border border-slate-700/50";
 
   if (failed || !faviconUrl) {
     return <div className={fallbackCls}>{initials}</div>;
   }
 
   return (
-    <div className={`${containerCls} bg-white border border-zinc-100`}>
+    <div className={containerCls}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={faviconUrl}

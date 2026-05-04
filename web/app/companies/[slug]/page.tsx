@@ -1,9 +1,3 @@
-/**
- * Per-company detail page.
- *
- * URL: /companies/[slug] where slug is the company's URL-safe name.
- */
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -23,9 +17,10 @@ async function fetchCompany(slug: string): Promise<CompanyWithAlumni | null> {
     .from("companies_with_alumni")
     .select("*")
     .eq("slug", slug)
-    .single();
-  if (error) return null;
-  return (data ?? null) as CompanyWithAlumni | null;
+    .order("id")
+    .limit(1);
+  if (error || !data?.length) return null;
+  return data[0] as CompanyWithAlumni;
 }
 
 async function fetchAlumni(companyId: number) {
@@ -48,10 +43,7 @@ function formatRoundSize(usd: number | null): string {
 function formatDate(d: string | null): string {
   if (!d) return "—";
   try {
-    return new Date(d).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-    });
+    return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short" });
   } catch {
     return d;
   }
@@ -74,12 +66,19 @@ export default async function CompanyDetail({ params }: Props) {
     );
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100">
+      {/* Background gradient orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-48 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[140px]" />
+        <div className="absolute top-1/3 -right-32 h-[400px] w-[400px] rounded-full bg-emerald-500/8 blur-[120px]" />
+        <div className="absolute bottom-0 -left-32 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-[120px]" />
+      </div>
+
+      <header className="relative border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-sm">
         <div className="mx-auto max-w-5xl px-6 py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-sm text-zinc-600 hover:text-zinc-900"
+            className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-100 transition-colors"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
               <path
@@ -93,16 +92,16 @@ export default async function CompanyDetail({ params }: Props) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-8">
+      <main className="relative mx-auto max-w-5xl px-6 py-10">
+        <section className="rounded-2xl border border-slate-700/40 bg-slate-900/80 backdrop-blur-sm p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <CompanyAvatar name={company.name} website={company.website} size="lg" />
             <div className="min-w-0 flex-1">
-              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 {company.name}
               </h1>
               {company.one_line_pitch && (
-                <p className="mt-2 text-lg leading-relaxed text-zinc-600">
+                <p className="mt-2 text-lg leading-relaxed text-slate-300">
                   {company.one_line_pitch}
                 </p>
               )}
@@ -129,9 +128,9 @@ export default async function CompanyDetail({ params }: Props) {
         </section>
 
         <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 lg:col-span-2">
-            <h2 className="text-base font-semibold text-zinc-900">How to reach them</h2>
-            <p className="mt-1 text-sm text-zinc-600">
+          <div className="rounded-2xl border border-slate-700/40 bg-slate-900/80 backdrop-blur-sm p-6 lg:col-span-2">
+            <h2 className="text-base font-semibold text-slate-100">How to reach them</h2>
+            <p className="mt-1 text-sm text-slate-400">
               Direct paths to apply or learn more.
             </p>
 
@@ -145,7 +144,7 @@ export default async function CompanyDetail({ params }: Props) {
               )}
 
               {isVCInternalUrl && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-300">
                   <strong>Heads up:</strong> the link below points to the VC firm&apos;s profile of this company, not the company&apos;s own site. We are working on automated link resolution.
                   <ApplyLink
                     label="View on VC firm site"
@@ -165,24 +164,24 @@ export default async function CompanyDetail({ params }: Props) {
               )}
 
               {company.source_fund && (
-                <div className="rounded-lg border border-zinc-200 p-3">
-                  <div className="text-xs uppercase tracking-wider text-zinc-500">Backed by</div>
-                  <div className="mt-1 text-sm font-medium text-zinc-900">{company.source_fund}</div>
+                <div className="rounded-lg border border-slate-700/40 bg-slate-800/60 p-3">
+                  <div className="text-xs uppercase tracking-wider text-slate-500">Backed by</div>
+                  <div className="mt-1 text-sm font-medium text-slate-200">{company.source_fund}</div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <h2 className="text-base font-semibold text-zinc-900">Vandy connections</h2>
-            <p className="mt-1 text-sm text-zinc-600">
+          <div className="rounded-2xl border border-slate-700/40 bg-slate-900/80 backdrop-blur-sm p-6">
+            <h2 className="text-base font-semibold text-slate-100">Vandy connections</h2>
+            <p className="mt-1 text-sm text-slate-400">
               Alumni currently at this company.
             </p>
 
             {alumni.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-dashed border-zinc-300 p-4 text-center">
-                <p className="text-sm text-zinc-500">No mapped alumni yet.</p>
-                <p className="mt-1 text-xs text-zinc-400">
+              <div className="mt-4 rounded-lg border border-dashed border-slate-700 p-4 text-center">
+                <p className="text-sm text-slate-400">No mapped alumni yet.</p>
+                <p className="mt-1 text-xs text-slate-500">
                   Alumni mapping rolls out in Phase 2.
                 </p>
               </div>
@@ -191,8 +190,8 @@ export default async function CompanyDetail({ params }: Props) {
                 {alumni.map((a, i) => (
                   <li key={i} className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-sm font-medium text-zinc-900">{a.name}</div>
-                      <div className="text-xs text-zinc-600">
+                      <div className="text-sm font-medium text-slate-200">{a.name}</div>
+                      <div className="text-xs text-slate-400">
                         {a.role ?? "—"}
                         {a.graduation_year ? ` · '${String(a.graduation_year).slice(2)}` : ""}
                       </div>
@@ -202,7 +201,7 @@ export default async function CompanyDetail({ params }: Props) {
                         href={a.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800"
+                        className="shrink-0 text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
                       >
                         LinkedIn ↗
                       </a>
@@ -214,14 +213,14 @@ export default async function CompanyDetail({ params }: Props) {
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-zinc-900">Data freshness</h2>
-          <p className="mt-2 text-sm text-zinc-600">
+        <section className="mt-6 rounded-2xl border border-slate-700/40 bg-slate-900/80 backdrop-blur-sm p-6">
+          <h2 className="text-base font-semibold text-slate-100">Data freshness</h2>
+          <p className="mt-2 text-sm text-slate-400">
             Last scraped: {company.last_scraped_at ? formatDate(company.last_scraped_at) : "Never"}.
             Source: {company.source_fund ? `${company.source_fund} portfolio page` : "manual entry"}.
           </p>
-          <p className="mt-3 text-xs text-zinc-500">
-            Found a problem with this listing? <Link href="/" className="underline">Go back</Link> and let us know.
+          <p className="mt-3 text-xs text-slate-500">
+            Found a problem with this listing? <Link href="/" className="text-violet-400 hover:text-violet-300 underline transition-colors">Go back</Link> and let us know.
           </p>
         </section>
       </main>
@@ -231,10 +230,10 @@ export default async function CompanyDetail({ params }: Props) {
 
 function Fact({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <div className="text-xs uppercase tracking-wider text-zinc-500">{label}</div>
-      <div className="mt-1 text-base font-semibold text-zinc-900">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-zinc-500">{sub}</div>}
+    <div className="rounded-xl border border-slate-700/40 bg-slate-900/80 p-4">
+      <div className="text-xs uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="mt-1 text-base font-semibold text-slate-100">{value}</div>
+      {sub && <div className="mt-0.5 text-xs text-slate-500">{sub}</div>}
     </div>
   );
 }
@@ -257,22 +256,22 @@ function ApplyLink({
       rel="noopener noreferrer"
       className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
         highlight
-          ? "border-emerald-300 bg-emerald-50 hover:bg-emerald-100"
-          : "border-zinc-200 hover:bg-zinc-50"
+          ? "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15"
+          : "border-slate-700/40 bg-slate-800/40 hover:bg-slate-800/80"
       }`}
     >
       <div>
-        <div className={`text-sm font-medium ${highlight ? "text-emerald-900" : "text-zinc-900"}`}>
+        <div className={`text-sm font-medium ${highlight ? "text-emerald-300" : "text-slate-200"}`}>
           {label}
         </div>
-        <div className={`mt-0.5 text-xs ${highlight ? "text-emerald-700" : "text-zinc-500"}`}>
+        <div className={`mt-0.5 text-xs ${highlight ? "text-emerald-400/70" : "text-slate-500"}`}>
           {description}
         </div>
       </div>
       <svg
         viewBox="0 0 20 20"
         fill="currentColor"
-        className={`h-4 w-4 shrink-0 ${highlight ? "text-emerald-700" : "text-zinc-400"}`}
+        className={`h-4 w-4 shrink-0 ${highlight ? "text-emerald-400" : "text-slate-500"}`}
       >
         <path
           fillRule="evenodd"
