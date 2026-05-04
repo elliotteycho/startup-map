@@ -302,8 +302,7 @@ export default async function CompanyDetail({ params }: Props) {
 
             {alumni.length === 0 ? (
               <div className="mt-4 rounded-lg border border-dashed border-slate-700/60 p-4 text-center">
-                <p className="text-sm text-slate-500">No mapped alumni yet.</p>
-                <p className="mt-1 text-xs text-slate-600">Alumni mapping rolls out in Phase 2.</p>
+                <p className="text-sm text-slate-500">No Vanderbilt alumni found here yet.</p>
               </div>
             ) : (
               <ul className="mt-4 space-y-3">
