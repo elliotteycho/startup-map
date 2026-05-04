@@ -142,9 +142,11 @@ def upsert_founders(sb, company_id: int, founders: list[dict]) -> int:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit",   type=int, default=200)
-    parser.add_argument("--source",  type=str, default=None)
-    parser.add_argument("--recheck", action="store_true")
+    parser.add_argument("--limit",           type=int, default=200)
+    parser.add_argument("--source",          type=str, default=None)
+    parser.add_argument("--recheck",         action="store_true")
+    parser.add_argument("--missing-linkedin", action="store_true",
+                        help="Only process companies where ≥1 founder is missing a LinkedIn URL")
     args = parser.parse_args()
 
     sb = get_supabase()
@@ -157,7 +159,12 @@ def main():
     query = query.order("id")
     companies = query.execute().data or []
 
-    if not args.recheck:
+    if args.missing_linkedin:
+        # Companies where at least one founder has no LinkedIn URL
+        no_li = sb.table("founders").select("company_id").is_("linkedin_url", "null").execute().data or []
+        target_ids = {r["company_id"] for r in no_li}
+        companies = [c for c in companies if c["id"] in target_ids]
+    elif not args.recheck:
         existing_ids = {
             r["company_id"]
             for r in (sb.table("founders").select("company_id").execute().data or [])
