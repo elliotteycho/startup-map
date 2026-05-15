@@ -68,7 +68,7 @@ export default async function Home() {
           <div className="mt-8 h-px w-16 bg-gradient-to-r from-violet-500 to-transparent" aria-hidden="true" />
 
           <p className="mt-6 max-w-lg text-base text-slate-400 sm:text-lg leading-relaxed">
-            Curated early-stage companies from top VC portfolios and YC —
+            Curated early stage companies from top VC portfolios and YC,
             filtered for Vanderbilt students looking for internships.
           </p>
         </div>

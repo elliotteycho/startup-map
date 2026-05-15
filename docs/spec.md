@@ -1,4 +1,4 @@
-# Startup Dashboard — v1 Specification
+# Startup Dashboard, v1 Specification
 
 **Status:** Locked, May 2026
 **Owner:** Elliott Cho
@@ -20,7 +20,7 @@ The problem is signal to noise in the early stage startup market. The competitiv
 
 **Structural giants** (Crunchbase, PitchBook, LinkedIn, Wellfound). Orders of magnitude more data. Cannot be beaten on their own terms.
 
-**Curated startup specific players** (YC's Work at a Startup, Built In, Welcome to the Jungle, Underdog Fund job board). Already proved the curation thesis works. YC is the most dangerous: 5000 active companies, free, high response rate.
+**Curated startup specific players** (YC's Work at a Startup, Built In, Welcome to the Jungle, Underdog Fund job board). Already proved the curation thesis works. YC is the most dangerous: 5,000 active companies, free, high response rate.
 
 **Student specific platforms** (Handshake, RippleMatch, Forage, WayUp). Direct school integration. Corporate dominated by design. Handshake is literally Vandy's career office portal.
 
@@ -50,7 +50,7 @@ The only durable defensibility. Two specific data assets:
 ### Strategic narrative
 Not "another startup database." This is the Facebook playbook for early career startup discovery. Win Vanderbilt completely (high penetration, high engagement), then expand to peer schools using the same template. Network effects compound within and across schools. The TAM is small at Vanderbilt alone but real across the top 30 undergrad campuses.
 
-## 4. Success Metrics (90-day thresholds)
+## 4. Success Metrics (90 day thresholds)
 
 100 unique Vanderbilt student visitors. 40 percent return rate within 14 days. 10 students who applied to a startup found through the platform. 3 students who got an interview as a result.
 
@@ -80,32 +80,38 @@ The driving constraint is time. Anything that takes more than 2 hours and does n
 
 ## 8. Technical Architecture
 
-**Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui. Deployed on Vercel.
+**Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4. Deployed on Vercel.
 
 **Database and auto generated REST API:** Supabase (managed Postgres). Row Level Security enabled from day 1.
 
-**Scraper:** Python 3.11+. Playwright for JavaScript heavy pages, BeautifulSoup for static HTML, Anthropic SDK for LLM extraction (Claude Haiku for cost). Pydantic for data validation. Deployed as a Render Cron Job, scheduled weekly.
+**Scraper:** Python 3.11+. Playwright for JavaScript heavy pages, BeautifulSoup for static HTML, Anthropic SDK with Claude Haiku for cost efficient LLM extraction. httpx for direct API access where available (notably YC's Algolia index). Pydantic for data validation. Designed to deploy as a Render Cron Job on a weekly schedule.
 
-**Version control:** GitHub, private repo to start.
+**Version control:** GitHub, public repo.
 
 **Multi school architecture:** `schools` table from day 1 with Vanderbilt as row 1. School is a parameter, never a hardcoded constant. URL routing supports `/vanderbilt/companies` even if Vanderbilt is the only valid path in v1.
 
 ## 9. Data Model (12 fields per company)
 
-`name`, `website` (unique), `sector`, `stage`, `last_round_date`, `last_round_size`, `lead_investor`, `headcount_range`, `location`, `careers_page_url`, `intern_hiring_status`, `one_line_pitch`. Plus `created_at`, `updated_at`, `last_scraped_at`.
+`name`, `website` (unique), `sector`, `stage`, `last_round_date`, `last_round_size_usd`, `lead_investor`, `headcount_range`, `location`, `careers_page_url`, `intern_hiring_status`, `one_line_pitch`. Plus `created_at`, `updated_at`, `last_scraped_at`, `source_fund`, and a derived `slug` for URL routing.
 
 ## 10. Repo Structure
 
 ```
 startup-dashboard/
 ├── README.md
+├── LICENSE
 ├── .gitignore
 ├── web/                    Next.js app, deployed to Vercel
 ├── scraper/                Python pipeline, deployed to Render
 ├── schema/                 SQL migrations (001_initial.sql, etc.)
+├── assets/                 Screenshots and diagrams
 └── docs/
     ├── spec.md             this document
-    └── decisions.md        architectural decision records
+    ├── decisions.md        architectural decision records
+    ├── architecture.md     engineering deep dive on data flow
+    ├── scraper-design.md   engineering deep dive on the scraper
+    ├── build-log.md        phase by phase narrative of what shipped
+    └── retros.md           weekly retrospectives
 ```
 
 ## 11. Operating Principles
@@ -114,22 +120,27 @@ Deploy on day 1 (Hello World to Vercel before any features). Commit early and of
 
 ## 12. Sprint Tasks (v1)
 
-1. Lock spec document and commit to repo
-2. Initialize GitHub repo and folder structure
-3. Provision Supabase project and capture credentials
-4. Define and apply initial database schema
-5. Scaffold Next.js web app with TypeScript and Tailwind
-6. Scaffold Python scraper environment
-7. Build first VC portfolio scraper as proof of concept (a16z)
-8. Build LLM-based generic extractor
-9. Wire scraper output into Supabase
-10. Build minimal data table page in Next.js
-11. Style the dashboard with Tailwind and shadcn/ui
-12. Implement sector and intern hiring filters
-13. Build per-company detail page
-14. Expand scraper to 20+ VC portfolio sources
-15. Deploy frontend to Vercel
-16. Deploy scraper to Render with weekly cron
-17. Add Vercel Analytics and basic error tracking
-18. Write README and decisions log
-19. Soft launch to 10 to 20 Vandy friends
+Status as of May 14, 2026. Checked items have clear evidence of completion in the repo; unchecked items are remaining work toward Phase 1 launch.
+
+- [x] Lock spec document and commit to repo
+- [x] Initialize GitHub repo and folder structure
+- [x] Provision Supabase project and capture credentials
+- [x] Define and apply initial database schema
+- [x] Scaffold Next.js web app with TypeScript and Tailwind
+- [x] Scaffold Python scraper environment
+- [x] Build first VC portfolio scraper as proof of concept (a16z, later deferred for being a heavy SPA)
+- [x] Build LLM-based generic extractor
+- [x] Wire scraper output into Supabase
+- [x] Build minimal data table page in Next.js
+- [x] Style the dashboard with Tailwind
+- [x] Implement sector and intern hiring filters
+- [x] Build per-company detail page
+- [x] Add YC source via direct Algolia API
+- [x] Build careers page enrichment script
+- [x] Deploy frontend to Vercel
+- [x] Write README, decisions log, architecture, and scraper design docs
+- [ ] Expand scraper to 20+ VC portfolio sources
+- [ ] Deploy scraper to Render with weekly cron
+- [ ] Add Vercel Analytics and basic error tracking
+- [ ] Populate Vanderbilt alumni table beyond seed data
+- [ ] Soft launch to 10 to 20 Vandy friends
