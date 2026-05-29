@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from extractors.llm import extract_companies
 from extractors.yc import BATCH_NAMES as YC_BATCH_NAMES, extract_yc_batch, get_algolia_key
+from event_hooks import emit_company_events, fetch_prior_companies
 
 load_dotenv()
 
@@ -87,17 +88,34 @@ def fetch_html(url: str, scroll_iterations: int = 15) -> str:
 
 
 def upsert_companies(supabase: Client, companies: list, source_fund: str) -> int:
-    """Upsert companies into Supabase, keyed on website. Returns rows affected."""
+    """Upsert companies into Supabase, keyed on website. Returns rows affected.
+
+    Track B Phase 1B: pre-fetches the prior state of each company (single
+    bulk SELECT keyed on the same `website` we upsert against), then diffs
+    prior -> after via `diff_and_emit` and appends rows to `company_events`.
+    Gated by EMIT_EVENTS env (default 'true'); fails open with a warning if
+    the table doesn't exist yet.
+    """
     if not companies:
         logger.info("upsert source=%s skipped reason=no_companies", source_fund)
         return 0
     rows = [c.to_supabase_row() for c in companies]
+
+    # Pre-fetch the prior state of every company we're about to touch (one
+    # round trip, batched). Missing rows mean first-seen companies.
+    websites = [r["website"] for r in rows]
+    prior_by_website = fetch_prior_companies(supabase, websites)
+
     response = supabase.table("companies").upsert(
         rows,
         on_conflict="website",
     ).execute()
     affected = len(response.data) if response.data else 0
     logger.info("upsert source=%s affected=%d", source_fund, affected)
+
+    # Emit change events (Phase 1B). Done before founders so a founders failure
+    # doesn't lose the change log for the run.
+    emit_company_events(supabase, prior_by_website, response.data or [], source_fund)
 
     # Upsert founders for any company that has them
     _upsert_founders(supabase, companies, response.data or [])
