@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>TechCrunch Venture (sample)</title>
+    <link>https://techcrunch.com/category/venture/</link>
+    <description>Fixture for tests</description>
+
+    <item>
+      <title>Decagon raises $65M Series B to scale agentic customer support</title>
+      <link>https://techcrunch.com/2026/05/24/decagon-raises-65m-series-b/</link>
+      <guid isPermaLink="true">https://techcrunch.com/2026/05/24/decagon-raises-65m-series-b/</guid>
+      <pubDate>Sat, 24 May 2026 13:11:00 +0000</pubDate>
+      <description><![CDATA[<p>Decagon raises $65M Series B led by Bain Capital Ventures, bringing the AI-agent platform to a $1.5B valuation.</p>]]></description>
+    </item>
+
+    <item>
+      <title>Stripe acquires Privy to bring crypto wallets to small businesses</title>
+      <link>https://techcrunch.com/2026/05/22/stripe-acquires-privy/</link>
+      <guid isPermaLink="true">https://techcrunch.com/2026/05/22/stripe-acquires-privy/</guid>
+      <pubDate>Thu, 22 May 2026 09:00:00 +0000</pubDate>
+      <description><![CDATA[Stripe acquires Privy for an undisclosed sum to extend wallet capabilities to Stripe's Atlas product.]]></description>
+    </item>
+
+    <item>
+      <title>Cresta raises $125M Series C to scale contact-center AI</title>
+      <link>https://techcrunch.com/2026/05/20/cresta-raises-125m/</link>
+      <guid isPermaLink="true">https://techcrunch.com/2026/05/20/cresta-raises-125m/</guid>
+      <pubDate>Tue, 20 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[Cresta raises $125M Series C led by Sequoia.]]></description>
+    </item>
+
+    <item>
+      <title>How VCs are rethinking late-stage AI rounds</title>
+      <link>https://techcrunch.com/2026/05/18/late-stage-ai/</link>
+      <guid isPermaLink="true">https://techcrunch.com/2026/05/18/late-stage-ai/</guid>
+      <pubDate>Sun, 18 May 2026 08:00:00 +0000</pubDate>
+      <description><![CDATA[An opinion piece with no extractable event.]]></description>
+    </item>
+  </channel>
+</rss>

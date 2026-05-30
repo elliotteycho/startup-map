@@ -1,0 +1,26 @@
+# Startup Map — internship ranker (learning-to-rank / CTR)
+# Core (main .venv, Python 3.11–3.14)
+numpy
+pandas
+scipy
+scikit-learn
+xgboost            # pointwise + LambdaMART LTR; on macOS also: brew install libomp
+joblib
+
+# Inference API + tests
+fastapi
+uvicorn[standard]
+pytest
+
+# Phase 2B — news entity linking
+rapidfuzz
+
+# Live data load (optional; falls back to synthetic if absent)
+supabase
+python-dotenv
+
+# Neural rankers
+torch              # PyTorch RankNet (ranker/torch_ranker.py) — main .venv
+# tensorflow       # ranker/tf_ranker.py — needs Python <= 3.12, install in .venv-tf:
+#                  #   uv venv --python 3.12 .venv-tf
+#                  #   uv pip install --python .venv-tf/bin/python tensorflow scikit-learn pandas numpy scipy joblib

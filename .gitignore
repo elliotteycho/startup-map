@@ -59,3 +59,10 @@ yarn-error.log*
 .cache/
 tmp/
 temp/
+
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.env
+.env.local
