@@ -5,7 +5,11 @@ import { useMemo, useState } from "react";
 import type { CompanyWithAlumni } from "@/lib/types";
 import { CompanyCard } from "./CompanyCard";
 
-const SECTORS = [
+// Preferred display order for well-known sectors. Any sector the scraper
+// produces that is not in this list still appears as a filter pill (sorted
+// after the known ones) so the pill set always matches the data — a sector
+// counted in the stats can never be missing from the filter UI.
+const SECTOR_ORDER = [
   "AI", "Fintech", "Healthcare", "Consumer", "Enterprise",
   "Crypto", "Climate", "Bio", "Education", "Gaming", "Other",
 ];
@@ -36,7 +40,12 @@ export function DashboardShell({ companies }: Props) {
   const sectorsPresent = useMemo(() => {
     const set = new Set<string>();
     companies.forEach(c => { if (c.sector) set.add(c.sector); });
-    return SECTORS.filter(s => set.has(s));
+    const rank = (s: string) => {
+      const i = SECTOR_ORDER.indexOf(s);
+      return i === -1 ? SECTOR_ORDER.length : i;
+    };
+    // Known sectors first (in preferred order), then any others alphabetically.
+    return [...set].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }, [companies]);
 
   const filtered = useMemo(() => {
