@@ -4,7 +4,7 @@ import type { CompanyWithAlumni } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
+async function fetchCompanies(): Promise<{ companies: CompanyWithAlumni[]; loadError: boolean }> {
   const { data, error } = await supabase
     .from("companies_with_alumni")
     .select("id, slug, name, website, sector, one_line_pitch, intern_hiring_status, location, source_fund, vandy_alumni_count")
@@ -13,13 +13,13 @@ async function fetchCompanies(): Promise<CompanyWithAlumni[]> {
 
   if (error) {
     console.error("fetchCompanies failed", error);
-    return [];
+    return { companies: [], loadError: true };
   }
-  return (data ?? []) as CompanyWithAlumni[];
+  return { companies: (data ?? []) as CompanyWithAlumni[], loadError: false };
 }
 
 export default async function Home() {
-  const companies = await fetchCompanies();
+  const { companies, loadError } = await fetchCompanies();
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100">
@@ -76,7 +76,24 @@ export default async function Home() {
 
       {/* ── Dashboard ──────────────────────────────────────────── */}
       <main id="main-content">
-        <DashboardShell companies={companies} />
+        {loadError ? (
+          <div className="mx-auto max-w-7xl px-6 pb-12">
+            <div
+              className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-12 text-center"
+              role="alert"
+            >
+              <p className="font-medium text-amber-200">
+                We couldn&apos;t load companies right now.
+              </p>
+              <p className="mt-2 text-sm text-slate-400">
+                This is a temporary issue on our end, not an empty list. Please
+                refresh in a moment.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <DashboardShell companies={companies} />
+        )}
       </main>
 
       <footer className="relative mx-auto max-w-7xl border-t border-slate-800/60 px-6 py-8">

@@ -48,7 +48,6 @@ export async function track(
   } catch (err) {
     // Tracking must never break the page. Swallow errors silently.
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
       console.warn("track failed", err);
     }
   }

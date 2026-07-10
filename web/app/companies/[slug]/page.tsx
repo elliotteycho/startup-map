@@ -1,25 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { FundingTimeline } from "@/components/FundingTimeline";
-import { HiringHistory } from "@/components/HiringHistory";
-import { MomentumIndicator } from "@/components/MomentumIndicator";
-import { NewsRail } from "@/components/NewsRail";
-import {
-  USE_FIXTURES,
-  getFixtureAlumni,
-  getFixtureCompany,
-  getFixtureFounders,
-  getFixtureFundingEvents,
-  getFixtureHiringEvents,
-  getFixtureMomentum,
-  getFixturePressEvents,
-} from "@/lib/fixtures";
 import { supabase } from "@/lib/supabase";
 import type {
   Alumni,
-  CompanyEvent,
-  CompanyMomentumToday,
   CompanyWithAlumni,
   Founder,
   InternHiringStatus,
@@ -50,7 +34,6 @@ function raceWithFallback<T, F>(p: PromiseLike<T>, fallback: F): Promise<T | F> 
 }
 
 async function fetchCompany(slug: string): Promise<CompanyWithAlumni | null> {
-  if (USE_FIXTURES) return getFixtureCompany(slug);
   const res = await raceWithFallback(
     supabase.from("companies_with_alumni").select("*").eq("slug", slug).maybeSingle(),
     null,
@@ -60,7 +43,6 @@ async function fetchCompany(slug: string): Promise<CompanyWithAlumni | null> {
 }
 
 async function fetchAlumni(companyId: number): Promise<Alumni[]> {
-  if (USE_FIXTURES) return getFixtureAlumni(companyId);
   const res = await raceWithFallback(
     supabase
       .from("alumni")
@@ -74,7 +56,6 @@ async function fetchAlumni(companyId: number): Promise<Alumni[]> {
 }
 
 async function fetchFounders(companyId: number): Promise<Founder[]> {
-  if (USE_FIXTURES) return getFixtureFounders(companyId);
   const res = await raceWithFallback(
     supabase
       .from("founders")
@@ -85,68 +66,6 @@ async function fetchFounders(companyId: number): Promise<Founder[]> {
   );
   if (!res) return [];
   return ((res.data as Founder[] | null) ?? []) as Founder[];
-}
-
-async function fetchFundingEvents(companyId: number): Promise<CompanyEvent[]> {
-  if (USE_FIXTURES) return getFixtureFundingEvents(companyId);
-  const res = await raceWithFallback(
-    supabase
-      .from("company_events")
-      .select("*")
-      .eq("company_id", companyId)
-      .in("kind", ["new_round", "round_size_increase", "stage_advance"])
-      .order("observed_at", { ascending: false }),
-    null,
-  );
-  if (!res) return [];
-  return ((res.data as CompanyEvent[] | null) ?? []) as CompanyEvent[];
-}
-
-async function fetchHiringEvents(companyId: number): Promise<CompanyEvent[]> {
-  if (USE_FIXTURES) return getFixtureHiringEvents(companyId);
-  const res = await raceWithFallback(
-    supabase
-      .from("company_events")
-      .select("*")
-      .eq("company_id", companyId)
-      .eq("kind", "hiring_status_change")
-      .order("observed_at", { ascending: false }),
-    null,
-  );
-  if (!res) return [];
-  return ((res.data as CompanyEvent[] | null) ?? []) as CompanyEvent[];
-}
-
-async function fetchPressEvents(companyId: number): Promise<CompanyEvent[]> {
-  if (USE_FIXTURES) return getFixturePressEvents(companyId);
-  const res = await raceWithFallback(
-    supabase
-      .from("company_events")
-      .select("*")
-      .eq("company_id", companyId)
-      .eq("kind", "press_mention")
-      .order("observed_at", { ascending: false })
-      .limit(5),
-    null,
-  );
-  if (!res) return [];
-  return ((res.data as CompanyEvent[] | null) ?? []) as CompanyEvent[];
-}
-
-async function fetchMomentum(
-  companyId: number,
-): Promise<CompanyMomentumToday | null> {
-  if (USE_FIXTURES) return getFixtureMomentum(companyId);
-  const res = await raceWithFallback(
-    supabase
-      .from("company_momentum_today")
-      .select("*")
-      .eq("company_id", companyId)
-      .maybeSingle(),
-    null,
-  );
-  if (!res) return null;
-  return (res.data as CompanyMomentumToday | null) ?? null;
 }
 
 function formatRoundSize(usd: number | null | undefined): string {
@@ -196,20 +115,9 @@ export default async function CompanyDetail({ params }: Props) {
   const company = await fetchCompany(slug);
   if (!company) notFound();
 
-  const [
-    alumni,
-    founders,
-    fundingEvents,
-    hiringEvents,
-    pressEvents,
-    momentum,
-  ] = await Promise.all([
+  const [alumni, founders] = await Promise.all([
     fetchAlumni(company.id),
     fetchFounders(company.id),
-    fetchFundingEvents(company.id),
-    fetchHiringEvents(company.id),
-    fetchPressEvents(company.id),
-    fetchMomentum(company.id),
   ]);
 
   const isPlaceholderUrl = company.website.includes("no-url.placeholder");
@@ -258,7 +166,7 @@ export default async function CompanyDetail({ params }: Props) {
             </span>
           </Link>
           <Link
-            href="/explore"
+            href="/"
             className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-400 transition hover:text-amber-300"
           >
             <svg
@@ -420,20 +328,6 @@ export default async function CompanyDetail({ params }: Props) {
             </aside>
           </div>
         </section>
-
-        {momentum && <MomentumIndicator momentum={momentum} />}
-
-        <FundingTimeline
-          events={fundingEvents}
-          fallbackStage={company.stage}
-          fallbackRoundUsd={company.last_round_size_usd}
-          fallbackRoundDate={company.last_round_date}
-          fallbackLeadInvestor={company.lead_investor}
-        />
-
-        <HiringHistory events={hiringEvents} currentStatus={status} />
-
-        <NewsRail events={pressEvents} />
 
         {/* ── Founders ───────────────────────────────────────────── */}
         {founders.length > 0 && (
@@ -677,7 +571,7 @@ export default async function CompanyDetail({ params }: Props) {
 
       <footer className="border-t border-zinc-900/80">
         <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-3 px-6 py-10 font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-600 sm:flex-row sm:items-center">
-          <Link href="/explore" className="transition hover:text-zinc-300">
+          <Link href="/" className="transition hover:text-zinc-300">
             Back to all companies
           </Link>
           <span className="flex items-center gap-5">

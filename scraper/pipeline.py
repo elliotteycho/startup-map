@@ -24,7 +24,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from extractors.llm import extract_companies
 from extractors.yc import BATCH_NAMES as YC_BATCH_NAMES, extract_yc_batch, get_algolia_key
-from event_hooks import emit_company_events, fetch_prior_companies
+
+# The change-event / momentum subsystem is optional. If `event_hooks` is not
+# present, the core scrape (company + founder upsert) must still run, so we
+# fall back to no-op stubs rather than crashing the whole pipeline on import.
+try:
+    from event_hooks import emit_company_events, fetch_prior_companies  # type: ignore
+except ImportError:
+    logging.getLogger("pipeline").warning(
+        "event_hooks not available; skipping change-event emission "
+        "(core company/founder scrape unaffected)"
+    )
+
+    def fetch_prior_companies(_supabase, _websites):  # type: ignore[misc]
+        return {}
+
+    def emit_company_events(_supabase, _prior, _rows, _source_fund):  # type: ignore[misc]
+        return None
 
 load_dotenv()
 
